@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/lib/pq"
-	"github.com/stevenleeg/gobb/models"
-	"github.com/stevenleeg/gobb/utils"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/lib/pq"
+	"github.com/stevenleeg/gobb/models"
+	"github.com/stevenleeg/gobb/utils"
 )
 
 func ActionMarkAllRead(w http.ResponseWriter, r *http.Request) {
@@ -31,16 +32,14 @@ func ActionStickThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread_id_str := r.FormValue("post_id")
-	thread_id, err := strconv.Atoi(thread_id_str)
-
+	threadID, err := strconv.Atoi(r.FormValue("post_id"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
 	db := models.GetDbSession()
-	obj, err := db.Get(&models.Post{}, thread_id)
+	obj, err := db.Get(&models.Post{}, threadID)
 	thread := obj.(*models.Post)
 
 	if thread == nil || err != nil {
@@ -51,7 +50,7 @@ func ActionStickThread(w http.ResponseWriter, r *http.Request) {
 	thread.Sticky = !(thread.Sticky)
 	db.Update(thread)
 
-	http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", thread.BoardId, thread.Id), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", thread.BoardID, thread.ID), http.StatusFound)
 }
 
 func ActionLockThread(w http.ResponseWriter, r *http.Request) {
@@ -61,16 +60,14 @@ func ActionLockThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread_id_str := r.FormValue("post_id")
-	thread_id, err := strconv.Atoi(thread_id_str)
-
+	threadID, err := strconv.Atoi(r.FormValue("post_id"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
 	db := models.GetDbSession()
-	obj, err := db.Get(&models.Post{}, thread_id)
+	obj, err := db.Get(&models.Post{}, threadID)
 	thread := obj.(*models.Post)
 
 	if thread == nil || err != nil {
@@ -81,21 +78,20 @@ func ActionLockThread(w http.ResponseWriter, r *http.Request) {
 	thread.Locked = !(thread.Locked)
 	db.Update(thread)
 
-	http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", thread.BoardId, thread.Id), http.StatusFound)
+	http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", thread.BoardID, thread.ID), http.StatusFound)
 }
 
 func ActionDeleteThread(w http.ResponseWriter, r *http.Request) {
 	user := utils.GetCurrentUser(r)
-	thread_id_str := r.FormValue("post_id")
-	thread_id, err := strconv.Atoi(thread_id_str)
 
+	threadID, err := strconv.Atoi(r.FormValue("post_id"))
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
 	db := models.GetDbSession()
-	obj, err := db.Get(&models.Post{}, thread_id)
+	obj, err := db.Get(&models.Post{}, threadID)
 	thread := obj.(*models.Post)
 
 	if thread == nil || err != nil {
@@ -103,40 +99,37 @@ func ActionDeleteThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if (thread.AuthorId != user.Id) && !user.CanModerate() {
+	if (thread.AuthorID != user.ID) && !user.CanModerate() {
 		http.NotFound(w, r)
 		return
 	}
 
-	redirect_board := true
-	if thread.ParentId.Valid {
-		redirect_board = false
+	redirectBoard := true
+	if thread.ParentID.Valid {
+		redirectBoard = false
 	}
 
 	thread.DeleteAllChildren()
 	db.Delete(thread)
 
-	if redirect_board {
-		http.Redirect(w, r, fmt.Sprintf("/board/%d", thread.BoardId), http.StatusFound)
+	if redirectBoard {
+		http.Redirect(w, r, fmt.Sprintf("/board/%d", thread.BoardID), http.StatusFound)
 	} else {
-		http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", thread.BoardId, thread.ParentId.Int64), http.StatusFound)
+		http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", thread.BoardID, thread.ParentID.Int64), http.StatusFound)
 	}
-
 }
 
 func ActionMoveThread(w http.ResponseWriter, r *http.Request) {
-	current_user := utils.GetCurrentUser(r)
-	if current_user == nil || !current_user.CanModerate() {
+	currentUser := utils.GetCurrentUser(r)
+	if currentUser == nil || !currentUser.CanModerate() {
 		http.NotFound(w, r)
 		return
 	}
 
-	thread_id_str := r.FormValue("post_id")
-	thread_id, err := strconv.Atoi(thread_id_str)
-	board_id_str := r.FormValue("to")
-	board_id, err := strconv.Atoi(board_id_str)
+	threadID, err := strconv.Atoi(r.FormValue("post_id"))
+	boardID, err := strconv.Atoi(r.FormValue("to"))
 
-	op, err := models.GetPost(thread_id)
+	op, err := models.GetPost(threadID)
 	boards, _ := models.GetBoards()
 
 	if op == nil || err != nil {
@@ -144,26 +137,26 @@ func ActionMoveThread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if board_id_str != "" {
+	if r.FormValue("to") != "" {
 		db := models.GetDbSession()
-		new_board, _ := models.GetBoard(board_id)
-		if new_board == nil {
+		targetBoard, _ := models.GetBoard(boardID)
+		if targetBoard == nil {
 			http.NotFound(w, r)
 			return
 		}
 
-		_, err := db.Exec("UPDATE posts SET board_id=$1 WHERE parent_id=$2", new_board.Id, op.Id)
-		op.BoardId = new_board.Id
+		_, err := db.Exec("UPDATE posts SET board_id=$1 WHERE parent_id=$2", targetBoard.ID, op.ID)
+		op.BoardID = targetBoard.ID
 		db.Update(op)
 		if err != nil {
 			http.NotFound(w, r)
 			fmt.Printf("Error moving post: %s\n", err.Error())
 			return
 		}
-		http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", op.BoardId, op.Id), http.StatusFound)
+		http.Redirect(w, r, fmt.Sprintf("/board/%d/%d", op.BoardID, op.ID), http.StatusFound)
 	}
 
-	board, err := models.GetBoard(int(op.BoardId))
+	board, err := models.GetBoard(int(op.BoardID))
 
 	utils.RenderTemplate(w, r, "action_move_thread.html", map[string]interface{}{
 		"board":  board,

@@ -2,14 +2,15 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/stevenleeg/gobb/models"
 	"github.com/stevenleeg/gobb/utils"
-	"net/http"
 )
 
 func Index(w http.ResponseWriter, request *http.Request) {
-	current_user := utils.GetCurrentUser(request)
-	boards, err := models.GetBoardsUnread(current_user)
+	currentUser := utils.GetCurrentUser(request)
+	boards, err := models.GetBoardsUnread(currentUser)
 
 	if err != nil {
 		fmt.Printf("[error] Could not get boards (%s)\n", err.Error())
@@ -29,7 +30,7 @@ func Index(w http.ResponseWriter, request *http.Request) {
 		"IsUnread": func(join *models.JoinBoardView) bool {
 			latest_post := join.Board.GetLatestPost()
 
-			if current_user != nil && !current_user.LastUnreadAll.Time.Before(latest_post.Op.LatestReply) {
+			if currentUser != nil && !currentUser.LastUnreadAll.Time.Before(latest_post.Op.LatestReply) {
 				return false
 			}
 

@@ -8,23 +8,25 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/lib/pq"
-	"github.com/stevenleeg/gobb/config"
 	"io"
+	"log"
 	"strconv"
 	"time"
+
+	"github.com/lib/pq"
+	"github.com/stevenleeg/gobb/config"
 )
 
 type User struct {
-	Id            int64          `db:"id"`
-	GroupId       int64          `db:"group_id"`
+	ID            int64          `db:"id"`
+	GroupID       int64          `db:"group_id"`
 	CreatedOn     time.Time      `db:"created_on"`
 	Username      string         `db:"username"`
 	Password      string         `db:"password"`
 	Avatar        string         `db:"avatar"`
 	Signature     sql.NullString `db:"signature"`
 	Salt          string         `db:"salt"`
-	StylesheetUrl sql.NullString `db:"stylesheet_url"`
+	StylesheetURL sql.NullString `db:"stylesheet_url"`
 	UserTitle     string         `db:"user_title"`
 	LastSeen      time.Time      `db:"last_seen"`
 	HideOnline    bool           `db:"hide_online"`
@@ -42,17 +44,17 @@ func NewUser(username, password string) *User {
 	return user
 }
 
-func AuthenticateUser(username, password string) (error, *User) {
+func AuthenticateUser(username, password string) (*User, error) {
 	db := GetDbSession()
 	user := &User{}
 	err := db.SelectOne(user, "SELECT * FROM users WHERE username=$1", username)
 	if err != nil {
-		fmt.Printf("[error] Cannot select user (%s)\n", err.Error())
-		return err, nil
+		log.Printf("[error] Cannot select user '%s', (%s)\n", username, err.Error())
+		return nil, err
 	}
 
-	if user.Id == 0 {
-		return errors.New("Invalid username/password"), nil
+	if user.ID == 0 {
+		return nil, errors.New("Inval username/password")
 	}
 
 	hasher := sha1.New()
@@ -61,14 +63,14 @@ func AuthenticateUser(username, password string) (error, *User) {
 	password = base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 
 	if password != user.Password {
-		return errors.New("Invalid username/password"), nil
+		return nil, errors.New("Inval username/password")
 	}
 
 	// Update the user's last seen
 	user.LastSeen = time.Now()
 	db.Update(user)
 
-	return nil, user
+	return user, nil
 }
 
 func GetUserCount() (int64, error) {
@@ -76,7 +78,7 @@ func GetUserCount() (int64, error) {
 
 	count, err := db.SelectInt("SELECT COUNT(*) FROM users")
 	if err != nil {
-		fmt.Printf("[error] Error selecting user count (%s)\n", err.Error())
+		log.Printf("[error] Error selecting user count (%s)\n", err.Error())
 		return 0, errors.New("Database error: " + err.Error())
 	}
 
@@ -90,8 +92,8 @@ func GetLatestUser() (*User, error) {
 	err := db.SelectOne(user, "SELECT * FROM users ORDER BY created_on DESC LIMIT 1")
 
 	if err != nil {
-		fmt.Printf("[error] Error selecting latest user (%s)\n", err.Error())
-		return nil, errors.New("Database error: " + err.Error())
+		log.Printf("[error] Error selecting latest user (%s)\n", err.Error())
+		return nil, fmt.Errorf("Database error: %s", err.Error())
 	}
 
 	if user.Username == "" {
@@ -103,14 +105,14 @@ func GetLatestUser() (*User, error) {
 
 func GetOnlineUsers() (users []*User) {
 	db := GetDbSession()
+	db.Select(&users, "SELECT * FROM users WHERE last_seen > current_timestamp - interval '5 minutes' AND he_online != true")
 
-	db.Select(&users, "SELECT * FROM users WHERE last_seen > current_timestamp - interval '5 minutes' AND hide_online != true")
 	return users
 }
 
-func GetUser(id int) (*User, error) {
+func GetUser(ID int) (*User, error) {
 	db := GetDbSession()
-	obj, err := db.Get(&User{}, id)
+	obj, err := db.Get(&User{}, ID)
 	if obj == nil {
 		return nil, err
 	}
@@ -133,7 +135,7 @@ func (user *User) SetPassword(password string) {
 }
 
 func (user *User) IsAdmin() bool {
-	if user.GroupId == 2 {
+	if user.GroupID == 2 {
 		return true
 	}
 
@@ -141,7 +143,7 @@ func (user *User) IsAdmin() bool {
 }
 
 func (user *User) CanModerate() bool {
-	if user.GroupId > 0 {
+	if user.GroupID > 0 {
 		return true
 	}
 
@@ -150,7 +152,7 @@ func (user *User) CanModerate() bool {
 
 func (user *User) GetPostCount() int64 {
 	db := GetDbSession()
-	count, err := db.SelectInt("SELECT COUNT(*) FROM posts WHERE author_id=$1", user.Id)
+	count, err := db.SelectInt("SELECT COUNT(*) FROM posts WHERE author_id=$1", user.ID)
 
 	if err != nil {
 		return 0
@@ -163,13 +165,13 @@ func (user *User) GetPosts(page int) []*Post {
 	db := GetDbSession()
 	var posts []*Post
 
-	posts_per_page, _ := config.Config.GetInt64("gobb", "posts_per_page")
-	offset := posts_per_page * int64(page)
+	postsPerPage, _ := config.Config.GetInt64("gobb", "posts_per_page")
+	offset := postsPerPage * int64(page)
 
-	_, err := db.Select(&posts, "SELECT * FROM posts WHERE author_id=$1 ORDER BY created_on DESC LIMIT $2 OFFSET $3", user.Id, posts_per_page, offset)
+	_, err := db.Select(&posts, "SELECT * FROM posts WHERE author_id=$1 ORDER BY created_on DESC LIMIT $2 OFFSET $3", user.ID, postsPerPage, offset)
 
 	if err != nil {
-		fmt.Printf("[error] Could not get user's posts (%s)", err.Error())
+		log.Printf("[error] Could not get user's posts (%s)", err.Error())
 	}
 
 	return posts

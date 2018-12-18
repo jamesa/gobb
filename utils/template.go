@@ -39,8 +39,8 @@ func tplAdd(first, second int) int {
 }
 
 func tplParseMarkdown(input string) template.HTML {
-	byte_slice := []byte(input)
-	return template.HTML(string(blackfriday.MarkdownBasic(byte_slice)))
+	byteSlice := []byte(input)
+	return template.HTML(string(blackfriday.MarkdownBasic(byteSlice)))
 }
 
 func tplGetCurrentUser(r *http.Request) func() *models.User {
@@ -89,9 +89,15 @@ func RenderTemplate(
 	gaAccount, _ := config.Config.GetString("googleanalytics", "account")
 
 	stylesheet := ""
+<<<<<<< Updated upstream
 	if (currentUser != nil) && currentUser.StylesheetUrl.Valid && currentUser.StylesheetUrl.String != "" {
 		stylesheet = currentUser.StylesheetUrl.String
 	} else if currentUser == nil || !currentUser.StylesheetUrl.Valid || currentUser.StylesheetUrl.String == "" {
+=======
+	if (currentUser != nil) && currentUser.StylesheetURL.Valid && currentUser.StylesheetURL.String != "" {
+		stylesheet = currentUser.StylesheetURL.String
+	} else if currentUser == nil || !currentUser.StylesheetURL.Valid || currentUser.StylesheetURL.String == "" {
+>>>>>>> Stashed changes
 		globalTheme, _ := models.GetStringSetting("theme_stylesheet")
 		if globalTheme != "" {
 			stylesheet = globalTheme
@@ -124,14 +130,14 @@ func RenderTemplate(
 	}
 
 	// Get the base template path
-	selected_template, _ := models.GetStringSetting("template")
-	var base_path string
-	if selected_template == "default" {
+	selectedTemplate, _ := models.GetStringSetting("template")
+	var basePath string
+	if selectedTemplate == "default" {
 		pkg, _ := build.Import("github.com/stevenleeg/gobb/gobb", ".", build.FindOnly)
-		base_path = filepath.Join(pkg.SrcRoot, pkg.ImportPath, "../templates/")
+		basePath = filepath.Join(pkg.SrcRoot, pkg.ImportPath, "../templates/")
 	} else {
-		base_path, _ = config.Config.GetString("gobb", "base_path")
-		base_path = filepath.Join(base_path, "templates", selected_template)
+		basePath, _ = config.Config.GetString("gobb", "base_path")
+		basePath = filepath.Join(basePath, "templates", selectedTemplate)
 	}
 
 	baseTpl := filepath.Join(base_path, "base.html")

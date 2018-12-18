@@ -1,19 +1,20 @@
 package utils
 
 import (
+	"net/http"
+
 	"github.com/gorilla/context"
 	"github.com/gorilla/sessions"
 	"github.com/stevenleeg/gobb/config"
 	"github.com/stevenleeg/gobb/models"
-	"net/http"
 )
 
 var Store *sessions.CookieStore
 
 func GetCookieStore(r *http.Request) *sessions.CookieStore {
 	if Store == nil {
-		cookie_key, _ := config.Config.GetString("gobb", "cookie_key")
-		Store = sessions.NewCookieStore([]byte(cookie_key))
+		cookieKey, _ := config.Config.GetString("gobb", "cookie_key")
+		Store = sessions.NewCookieStore([]byte(cookieKey))
 	}
 
 	return Store
@@ -26,16 +27,18 @@ func GetCurrentUser(r *http.Request) *models.User {
 	}
 
 	session, _ := GetCookieStore(r).Get(r, "sirsid")
+	sessionUsername := session.Values["username"]
+	sessionPassword := session.Values["password"]
 
-	if session.Values["username"] == nil || session.Values["password"] == nil {
+	if sessionUsername == nil || sessionPassword == nil {
 		return nil
 	}
-	err, current_user := models.AuthenticateUser(session.Values["username"].(string), session.Values["password"].(string))
 
+	currentUser, err := models.AuthenticateUser(sessionUsername.(string), sessionPassword.(string))
 	if err != nil {
 		return nil
 	}
 
-	context.Set(r, "user", current_user)
-	return current_user
+	context.Set(r, "user", currentUser)
+	return currentUser
 }

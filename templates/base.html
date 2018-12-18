@@ -23,8 +23,8 @@
           <a class="title" href="/">{{.site_name}}</a>
 
           <div class="mobile-menu">
-            {{if .current_user}}
-              <a href="/user/{{.current_user.Id}}/settings">{{.current_user.Username}}</a> //
+            {{if .currentUser}}
+              <a href="/user/{{.currentUser.ID}}/settings">{{.currentUser.Username}}</a> //
               <a href="/logout">logout</a>
             {{else}}
               <a href="/login">login</a> //
@@ -34,10 +34,10 @@
         </div>
 
         <div class="right eight columns">
-            {{if .current_user}}
-              <a href="/user/{{.current_user.Id}}/settings">{{.current_user.Username}}</a> //
+            {{if .currentUser}}
+              <a href="/user/{{.currentUser.ID}}/settings">{{.currentUser.Username}}</a> //
 
-              {{if .current_user.IsAdmin}}
+              {{if .currentUser.IsAdmin}}
                 <a href="/admin">admin</a> //
               {{end}}
 

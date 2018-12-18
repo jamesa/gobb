@@ -2,14 +2,15 @@ package models
 
 import (
 	"fmt"
-	"github.com/lib/pq"
-	"github.com/stevenleeg/gobb/config"
 	"math"
 	"time"
+
+	"github.com/lib/pq"
+	"github.com/stevenleeg/gobb/config"
 )
 
 type Board struct {
-	Id          int64  `db:"id"`
+	ID          int64  `db:"id"`
 	Title       string `db:"title"`
 	Description string `db:"description"`
 	Order       int    `db:"ordering"`
@@ -22,7 +23,7 @@ type BoardLatest struct {
 
 type JoinBoardView struct {
 	Board       *Board      `db:"-"`
-	Id          int64       `db:"id"`
+	ID          int64       `db:"id"`
 	Title       string      `db:"title"`
 	Description string      `db:"description"`
 	Order       int         `db:"ordering"`
@@ -31,10 +32,10 @@ type JoinBoardView struct {
 
 type JoinThreadView struct {
 	Thread      *Post       `db:"-"`
-	Id          int64       `db:"id"`
-	BoardId     int64       `db:"board_id"`
+	ID          int64       `db:"id"`
+	BoardID     int64       `db:"board_id"`
 	Author      *User       `db:"-"`
-	AuthorId    int64       `db:"author_id"`
+	AuthorID    int64       `db:"author_id"`
 	Title       string      `db:"title"`
 	CreatedOn   time.Time   `db:"created_on"`
 	LatestReply time.Time   `db:"latest_reply"`
@@ -51,18 +52,18 @@ func NewBoard(title, desc string, order int) *Board {
 	}
 }
 
-func UpdateBoard(title, desc string, order int, id int64) *Board {
+func UpdateBoard(title, desc string, order int, ID int64) *Board {
 	return &Board{
 		Title:       title,
 		Description: desc,
 		Order:       order,
-		Id:          id,
+		ID:          ID,
 	}
 }
 
-func GetBoard(id int) (*Board, error) {
+func GetBoard(ID int) (*Board, error) {
 	db := GetDbSession()
-	obj, err := db.Get(&Board{}, id)
+	obj, err := db.Get(&Board{}, ID)
 	if obj == nil {
 		return nil, err
 	}
@@ -82,9 +83,9 @@ func GetBoards() ([]*Board, error) {
 func GetBoardsUnread(user *User) ([]*JoinBoardView, error) {
 	db := GetDbSession()
 
-	user_id := int64(-1)
+	userID := int64(-1)
 	if user != nil {
-		user_id = user.Id
+		userID = user.ID
 	}
 
 	var boards []*JoinBoardView
@@ -98,17 +99,18 @@ func GetBoardsUnread(user *User) ([]*JoinBoardView, error) {
             views.user_id=$1
         ORDER BY
             ordering ASC
-    `, user_id)
+    `, userID)
 
 	for i := range boards {
-		if user_id == -1 {
+		if userID == -1 {
 			boards[i].ViewedOn = pq.NullTime{Time: time.Now(), Valid: true}
 		}
 
 		boards[i].Board = &Board{
-			Id: boards[i].Id,
+			ID: boards[i].ID,
 		}
 	}
+
 	return boards, err
 }
 
@@ -117,13 +119,13 @@ func (board *Board) GetLatestPost() BoardLatest {
 	op := &Post{}
 	latest := &Post{}
 
-	err := db.SelectOne(op, "SELECT * FROM posts WHERE board_id=$1 AND parent_id IS NULL ORDER BY latest_reply DESC LIMIT 1", board.Id)
+	err := db.SelectOne(op, "SELECT * FROM posts WHERE board_id=$1 AND parent_id IS NULL ORDER BY latest_reply DESC LIMIT 1", board.ID)
 
 	if err != nil {
-		fmt.Printf("[error] Could not get latest post in board %d (%s)\n", board.Id, err.Error())
+		fmt.Printf("[error] Could not get latest post in board %d (%s)\n", board.ID, err.Error())
 	}
 
-	err = db.SelectOne(latest, "SELECT * FROM posts WHERE board_id=$1 AND parent_id=$2 ORDER BY created_on DESC LIMIT 1", board.Id, op.Id)
+	err = db.SelectOne(latest, "SELECT * FROM posts WHERE board_id=$1 AND parent_id=$2 ORDER BY created_on DESC LIMIT 1", board.ID, op.ID)
 
 	if latest.Author == nil {
 		latest = nil
@@ -137,14 +139,14 @@ func (board *Board) GetLatestPost() BoardLatest {
 
 func (board *Board) GetThreads(page int, user *User) ([]*JoinThreadView, error) {
 	db := GetDbSession()
-	threads_per_page, err := config.Config.GetInt64("gobb", "threads_per_page")
+	thradsPerPage, err := config.Config.GetInt64("gobb", "threads_per_page")
 
 	var threads []*JoinThreadView
-	i_begin := int64(page) * (threads_per_page - 1)
+	i_begin := int64(page) * (thradsPerPage - 1)
 
-	user_id := int64(-1)
+	userID := int64(-1)
 	if user != nil {
-		user_id = user.Id
+		userID = user.ID
 	}
 	_, err = db.Select(&threads, `
         SELECT 
@@ -168,18 +170,18 @@ func (board *Board) GetThreads(page int, user *User) ([]*JoinThreadView, error) 
             sticky DESC,
             latest_reply DESC
         LIMIT $2 OFFSET $3
-    `, board.Id, threads_per_page-1, i_begin, user_id)
+    `, board.ID, thradsPerPage-1, i_begin, userID)
 
 	for i := range threads {
-		if user_id == -1 {
+		if userID == -1 {
 			threads[i].ViewedOn = pq.NullTime{Time: time.Now(), Valid: true}
 		}
 
-		obj, _ := db.Get(&User{}, threads[i].AuthorId)
+		obj, _ := db.Get(&User{}, threads[i].AuthorID)
 		user := obj.(*User)
 		threads[i].Author = user
 		threads[i].Thread = &Post{
-			Id: threads[i].Id,
+			ID: threads[i].ID,
 		}
 	}
 
@@ -188,20 +190,20 @@ func (board *Board) GetThreads(page int, user *User) ([]*JoinThreadView, error) 
 
 func (board *Board) GetPagesInBoard() int {
 	db := GetDbSession()
-	count, err := db.SelectInt("SELECT COUNT(*) FROM posts WHERE board_id=$1 AND parent_id IS NULL", board.Id)
+	count, err := db.SelectInt("SELECT COUNT(*) FROM posts WHERE board_id=$1 AND parent_id IS NULL", board.ID)
 
-	threads_per_page, err := config.Config.GetInt64("gobb", "threads_per_page")
+	threadsPerPage, err := config.Config.GetInt64("gobb", "threads_per_page")
 
 	if err != nil {
-		threads_per_page = 30
+		threadsPerPage = 30
 	}
 
-	return int(math.Floor(float64(count) / float64(threads_per_page)))
+	return int(math.Floor(float64(count) / float64(threadsPerPage)))
 }
 
-// Deletes a board and all of the posts it contains
+// Delete a board and all of the posts it contains
 func (board *Board) Delete() {
 	db := GetDbSession()
-	db.Exec("DELETE FROM posts WHERE board_id=$1", board.Id)
+	db.Exec("DELETE FROM posts WHERE board_id=$1", board.ID)
 	db.Delete(board)
 }

@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/stevenleeg/gobb/models"
 	"github.com/stevenleeg/gobb/utils"
-	"net/http"
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +54,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		// Adminify the first user
 		id, err := db.SelectInt("SELECT lastval()")
 		if err == nil && id == 1 {
-			user.GroupId = 2
+			user.GroupID = 2
 			count, err = db.Update(user)
 
 			if err != nil {

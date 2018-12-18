@@ -2,16 +2,17 @@ package controllers
 
 import (
 	"database/sql"
+	"net/http"
+	"strconv"
+
 	"github.com/gorilla/mux"
 	"github.com/stevenleeg/gobb/models"
 	"github.com/stevenleeg/gobb/utils"
-	"net/http"
-	"strconv"
 )
 
 func AdminUsers(w http.ResponseWriter, r *http.Request) {
-	current_user := utils.GetCurrentUser(r)
-	if current_user == nil || !current_user.IsAdmin() {
+	currentUser := utils.GetCurrentUser(r)
+	if currentUser == nil || !currentUser.IsAdmin() {
 		http.NotFound(w, r)
 		return
 	}
@@ -40,8 +41,8 @@ func AdminUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func AdminUser(w http.ResponseWriter, r *http.Request) {
-	current_user := utils.GetCurrentUser(r)
-	if current_user == nil || !current_user.IsAdmin() {
+	currentUser := utils.GetCurrentUser(r)
+	if currentUser == nil || !currentUser.IsAdmin() {
 		http.NotFound(w, r)
 		return
 	}
@@ -63,7 +64,7 @@ func AdminUser(w http.ResponseWriter, r *http.Request) {
 		user.Username = r.FormValue("username")
 		user.Avatar = r.FormValue("avatar_url")
 		user.UserTitle = r.FormValue("user_title")
-		user.StylesheetUrl = sql.NullString{
+		user.StylesheetURL = sql.NullString{
 			Valid:  true,
 			String: r.FormValue("stylesheet_url"),
 		}
@@ -104,7 +105,7 @@ func AdminUser(w http.ResponseWriter, r *http.Request) {
 		}
 
 		group_id, _ := strconv.Atoi(r.FormValue("group_id"))
-		user.GroupId = int64(group_id)
+		user.GroupID = int64(group_id)
 
 		if form_error == "" {
 			db.Update(user)

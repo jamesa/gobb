@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/stevenleeg/gobb/models"
-	"github.com/stevenleeg/gobb/utils"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/stevenleeg/gobb/models"
+	"github.com/stevenleeg/gobb/utils"
 )
 
 func renderPostEditor(
@@ -27,7 +28,7 @@ func renderPostEditor(
 				return true
 			}
 
-			return !post.ParentId.Valid
+			return !post.ParentID.Valid
 		},
 	})
 }
@@ -60,12 +61,13 @@ func PostEditor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	current_user := utils.GetCurrentUser(r)
-	if current_user == nil {
+	currentUser := utils.GetCurrentUser(r)
+	if currentUser == nil {
 		http.NotFound(w, r)
 		return
 	}
-	if post != nil && (post.AuthorId != current_user.Id && !current_user.CanModerate()) {
+
+	if post != nil && (post.AuthorID != currentUser.ID && !currentUser.CanModerate()) {
 		http.NotFound(w, r)
 		return
 	}
@@ -75,7 +77,7 @@ func PostEditor(w http.ResponseWriter, r *http.Request) {
 		content := r.FormValue("content")
 
 		if post == nil {
-			post = models.NewPost(current_user, board, title, content)
+			post = models.NewPost(currentUser, board, title, content)
 			post.LatestReply = time.Now()
 
 			err = post.Validate()

@@ -1,15 +1,16 @@
 package controllers
 
 import (
-	"github.com/stevenleeg/gobb/models"
-	"github.com/stevenleeg/gobb/utils"
 	"net/http"
 	"strconv"
+
+	"github.com/stevenleeg/gobb/models"
+	"github.com/stevenleeg/gobb/utils"
 )
 
 func AdminBoards(w http.ResponseWriter, r *http.Request) {
-	current_user := utils.GetCurrentUser(r)
-	if current_user == nil || !current_user.IsAdmin() {
+	currentUser := utils.GetCurrentUser(r)
+	if currentUser == nil || !currentUser.IsAdmin() {
 		http.NotFound(w, r)
 		return
 	}
@@ -19,14 +20,14 @@ func AdminBoards(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" && r.FormValue("create_board") != "" {
 		name := r.FormValue("title")
 		desc := r.FormValue("description")
-		form_order := r.FormValue("order")
+		formOrder := r.FormValue("order")
 		var order int
 
-		if form_order != "" {
-			if len(form_order) == 0 {
+		if formOrder != "" {
+			if len(formOrder) == 0 {
 				order = 1
 			} else {
-				order, _ = strconv.Atoi(form_order)
+				order, _ = strconv.Atoi(formOrder)
 			}
 		} else {
 			order = 1
@@ -44,18 +45,18 @@ func AdminBoards(w http.ResponseWriter, r *http.Request) {
 		// loop through the post data, entries correspond via index in the map
 		for i := 0; i < len(r.Form["board_id"]); i++ {
 			// basically repeat the process for inserting a board
-			form_id, _ := strconv.Atoi(r.Form["board_id"][i])
-			id := int64(form_id)
+			formID, _ := strconv.Atoi(r.Form["board_id"][i])
+			id := int64(formID)
 			name := r.Form["name"][i]
 			desc := r.Form["description"][i]
-			form_order := r.Form["order"][i]
+			formOrder := r.Form["order"][i]
 			var order int
 
-			if form_order != "" {
-				if len(form_order) == 0 {
+			if formOrder != "" {
+				if len(formOrder) == 0 {
 					order = 1
 				} else {
-					order, _ = strconv.Atoi(form_order)
+					order, _ = strconv.Atoi(formOrder)
 				}
 			} else {
 				order = 1

@@ -1,14 +1,15 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/stevenleeg/gobb/models"
 	"github.com/stevenleeg/gobb/utils"
-	"net/http"
 )
 
 func Admin(w http.ResponseWriter, r *http.Request) {
-	current_user := utils.GetCurrentUser(r)
-	if current_user == nil || !current_user.IsAdmin() {
+	currentUser := utils.GetCurrentUser(r)
+	if currentUser == nil || !currentUser.IsAdmin() {
 		http.NotFound(w, r)
 		return
 	}

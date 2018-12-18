@@ -8,11 +8,11 @@ import (
 )
 
 type View struct {
-	Id     string    `db:"id"`
+	ID     string    `db:"id"`
 	Post   *Post     `db:"-"`
-	PostId int64     `db:"post_id"`
+	PostID int64     `db:"post_id"`
 	User   *User     `db:"-"`
-	UserId int64     `db:"user_id"`
+	UserID int64     `db:"user_id"`
 	Time   time.Time `db:"time"`
 }
 
@@ -21,7 +21,7 @@ func AddView(user *User, post *Post) *View {
 
 	// Generate the hash of userid and post id
 	h := md5.New()
-	hash := fmt.Sprintf("%d_%d", user.Id, post.Id)
+	hash := fmt.Sprintf("%d_%d", user.ID, post.ID)
 	h.Write([]byte(hash))
 	hash = hex.EncodeToString(h.Sum(nil))
 
@@ -29,11 +29,11 @@ func AddView(user *User, post *Post) *View {
 	obj, _ := db.Get(&View{}, hash)
 	if obj == nil {
 		view = &View{
-			Id:     hash,
+			ID:     hash,
 			Post:   post,
-			PostId: post.Id,
+			PostID: post.ID,
 			User:   user,
-			UserId: user.Id,
+			UserID: user.ID,
 			Time:   time.Now(),
 		}
 

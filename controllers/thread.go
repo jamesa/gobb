@@ -14,53 +14,50 @@ import (
 )
 
 func Thread(w http.ResponseWriter, r *http.Request) {
-	page_id_str := r.FormValue("page")
-	page_id, err := strconv.Atoi(page_id_str)
+	pageID, err := strconv.Atoi(r.FormValue("page"))
 	if err != nil {
-		page_id = 0
+		pageID = 0
 	}
 
-	board_id_str := mux.Vars(r)["board_id"]
-	board_id, _ := strconv.Atoi(board_id_str)
-	board, err := models.GetBoard(board_id)
+	boardID, _ := strconv.Atoi(mux.Vars(r)["board_id"])
+	board, err := models.GetBoard(boardID)
 
-	post_id_str := mux.Vars(r)["post_id"]
-	post_id, _ := strconv.Atoi(post_id_str)
-	err, op, posts := models.GetThread(post_id, page_id)
+	postID, err := strconv.Atoi(mux.Vars(r)["post_id"])
+	err, op, posts := models.GetThread(postID, pageID)
 
-	var posting_error error
+	var postingError error
 
-	current_user := utils.GetCurrentUser(r)
+	currentUser := utils.GetCurrentUser(r)
 	if r.Method == "POST" {
 		db := models.GetDbSession()
 		title := r.FormValue("title")
 		content := r.FormValue("content")
 
-		if current_user == nil {
+		if currentUser == nil {
 			http.NotFound(w, r)
 			return
 		}
 
-		if op.Locked && !current_user.CanModerate() {
+		if op.Locked && !currentUser.CanModerate() {
 			http.NotFound(w, r)
 			return
 		}
 
-		post := models.NewPost(current_user, board, title, content)
-		post.ParentId = sql.NullInt64{int64(post_id), true}
+		post := models.NewPost(currentUser, board, title, content)
+		post.ParentID = sql.NullInt64{int64(postID), true}
 		op.LatestReply = time.Now()
 
-		posting_error = post.Validate()
+		postingError = post.Validate()
 
-		if posting_error == nil {
+		if postingError == nil {
 			db.Insert(post)
 			db.Update(op)
 
-			if page := post.GetPageInThread(); page != page_id {
-				http.Redirect(w, r, fmt.Sprintf("/board/%d/%d?page=%d#post_%d", post.BoardId, op.Id, page, post.Id), http.StatusFound)
+			if page := post.GetPageInThread(); page != pageID {
+				http.Redirect(w, r, fmt.Sprintf("/board/%d/%d?page=%d#post_%d", post.BoardID, op.ID, page, post.ID), http.StatusFound)
 			}
 
-			err, op, posts = models.GetThread(post_id, page_id)
+			err, op, posts = models.GetThread(postID, pageID)
 		}
 	}
 
@@ -70,80 +67,80 @@ func Thread(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	num_pages := op.GetPagesInThread()
+	numPages := op.GetPagesInThread()
 
-	if page_id > num_pages {
+	if pageID > numPages {
 		http.NotFound(w, r)
 		return
 	}
 
-	var previous_text string
-	if posting_error != nil {
-		previous_text = r.FormValue("content")
+	var previousText string
+	if postingError != nil {
+		previousText = r.FormValue("content")
 	}
 
 	// Mark the thread as read
-	if current_user != nil {
-		models.AddView(current_user, op)
+	if currentUser != nil {
+		models.AddView(currentUser, op)
 	}
 
 	utils.RenderTemplate(w, r, "thread.html", map[string]interface{}{
-		"board":         board,
-		"op":            op,
-		"posts":         posts,
-		"first_page":    (page_id > 0),
-		"prev_page":     (page_id > 1),
-		"next_page":     (page_id < num_pages-1),
-		"last_page":     (page_id < num_pages),
-		"page_id":       page_id,
-		"posting_error": posting_error,
-		"previous_text": previous_text,
+		"board":        board,
+		"op":           op,
+		"posts":        posts,
+		"first_page":   (pageID > 0),
+		"prev_page":    (pageID > 1),
+		"next_page":    (pageID < numPages-1),
+		"last_page":    (pageID < numPages),
+		"pageID":       pageID,
+		"postingError": postingError,
+		"previousText": previousText,
 	}, map[string]interface{}{
 
 		"CurrentUserCanModerateThread": func(thread *models.Post) bool {
-			current_user := utils.GetCurrentUser(r)
-			if current_user == nil {
+			currentUser := utils.GetCurrentUser(r)
+			if currentUser == nil {
 				return false
 			}
 
-			return (current_user.CanModerate() && thread.ParentId.Valid == false)
+			return (currentUser.CanModerate() && thread.ParentID.Valid == false)
 		},
 
 		"CurrentUserCanDeletePost": func(thread *models.Post) bool {
-			current_user := utils.GetCurrentUser(r)
-			if current_user == nil {
+			currentUser := utils.GetCurrentUser(r)
+			if currentUser == nil {
 				return false
 			}
 
-			return (current_user.Id == thread.AuthorId) || current_user.CanModerate()
+			return (currentUser.ID == thread.AuthorID) || currentUser.CanModerate()
 		},
 
 		"CurrentUserCanEditPost": func(post *models.Post) bool {
-			current_user := utils.GetCurrentUser(r)
-			if current_user == nil {
+			currentUser := utils.GetCurrentUser(r)
+			if currentUser == nil {
 				return false
 			}
 
-			return (current_user.Id == post.AuthorId || current_user.CanModerate())
+			return (currentUser.ID == post.AuthorID || currentUser.CanModerate())
 		},
 
 		"CurrentUserCanModerate": func() bool {
-			current_user := utils.GetCurrentUser(r)
-			if current_user == nil {
+			currentUser := utils.GetCurrentUser(r)
+			if currentUser == nil {
 				return false
 			}
 
-			return current_user.CanModerate()
+			return currentUser.CanModerate()
 		},
 
 		"SignaturesEnabled": func() bool {
-			enable_signatures, _ := config.Config.GetBool("gobb", "enable_signatures")
-			return enable_signatures
+			enableSignatures, _ := config.Config.GetBool("gobb", "enable_signatures")
+			return enableSignatures
 		},
 
 		"CurrentUserCanReply": func(post *models.Post) bool {
-			current_user := utils.GetCurrentUser(r)
-			if current_user != nil && (!post.Locked || current_user.CanModerate()) {
+			currentUser := utils.GetCurrentUser(r)
+			if currentUser != nil && (!post.Locked || currentUser.CanModerate()) {
 				return true
 			}
 			return false

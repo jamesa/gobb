@@ -3,14 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"go/build"
+	"net/http"
+	"path/filepath"
+
 	"github.com/gorilla/mux"
 	"github.com/stevenleeg/gobb/config"
 	"github.com/stevenleeg/gobb/controllers"
 	"github.com/stevenleeg/gobb/models"
 	"github.com/stevenleeg/gobb/utils"
-	"go/build"
-	"net/http"
-	"path/filepath"
 )
 
 func main() {
@@ -83,6 +84,10 @@ func main() {
 	http.Handle("/", r)
 
 	port, err := config.Config.GetString("gobb", "port")
+	if err != nil {
+		port = "8080"
+	}
+
 	fmt.Println("[notice] Starting server on port " + port)
 	http.ListenAndServe(":"+port, nil)
 }

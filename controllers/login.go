@@ -2,9 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/stevenleeg/gobb/models"
 	"github.com/stevenleeg/gobb/utils"
-	"net/http"
 )
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -18,7 +19,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		password := r.FormValue("password")
 
 		var error string
-		err, _ := models.AuthenticateUser(username, password)
+		_, err := models.AuthenticateUser(username, password)
 		if err != nil {
 			error = "Invalid username or password"
 		}

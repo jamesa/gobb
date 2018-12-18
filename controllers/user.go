@@ -1,25 +1,25 @@
 package controllers
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/gorilla/mux"
 	"github.com/stevenleeg/gobb/models"
 	"github.com/stevenleeg/gobb/utils"
-	"net/http"
-	"strconv"
 )
 
 func User(w http.ResponseWriter, r *http.Request) {
 	db := models.GetDbSession()
 
-	user_id_str := mux.Vars(r)["id"]
-	user_id, err := strconv.Atoi(user_id_str)
+	userID, err := strconv.Atoi(mux.Vars(r)["id"])
 
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	user, err := db.Get(&models.User{}, user_id)
+	user, err := db.Get(&models.User{}, userID)
 	if err != nil {
 		http.NotFound(w, r)
 		return

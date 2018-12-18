@@ -1,14 +1,14 @@
 {{define "board-right"}}
   {{if .Op.Title}}
-    <a href="board/{{.Op.BoardId}}/{{.Op.Id}}?page={{.Op.GetPagesInThread}}#latest">
+    <a href="board/{{.Op.BoardID}}/{{.Op.ID}}?page={{.Op.GetPagesInThread}}#latest">
       {{.Op.Title}}
     </a>
     by
     {{if .Latest}}
-      <a href="user/{{.Latest.Author.Id}}">{{.Latest.Author.Username}}</a>
+      <a href="user/{{.Latest.Author.ID}}">{{.Latest.Author.Username}}</a>
       <div class="board-latest-time">{{TimeRelativeToNow .Latest.CreatedOn}}</div>
     {{else}}
-      <a href="user/{{.Op.Author.Id}}">{{.Op.Author.Username}}</a>
+      <a href="user/{{.Op.Author.ID}}">{{.Op.Author.Username}}</a>
       <div class="board-latest-time">{{TimeRelativeToNow .Op.CreatedOn}}</div>
     {{end}}
     {{else}}
@@ -37,7 +37,7 @@
               {{if IsUnread .}}
                 <span class="unread-indicator">&nbsp;</span>
               {{end}}
-              <a href="board/{{.Id}}" class="board-title">{{.Title}}</a>
+              <a href="board/{{.ID}}" class="board-title">{{.Title}}</a>
               <span class="board-description">{{.Description}}</span>
             </td>
             <td class="board-list-right">
@@ -60,14 +60,14 @@
       <p>
         {{.site_name}} has <b>{{.user_count}} members</b>, who have created a total of <b>{{.total_posts}} posts</b>. 
         {{if .latest_user}}
-          Say hello to our newest member, <a href="user/{{.latest_user.Id}}">{{.latest_user.Username}}</a>
+          Say hello to our newest member, <a href="user/{{.latest_user.ID}}">{{.latest_user.Username}}</a>
         {{end}}
       </p>
 
       <p>
         <b>Users online:</b> 
         {{range .online_users}}
-          <a class="online-user" href="user/{{.Id}}">{{.Username}}</a>
+          <a class="online-user" href="user/{{.ID}}">{{.Username}}</a>
         {{else}}
           None
         {{end}}
